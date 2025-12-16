@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label"
 import type { Solution } from "@/lib/types"
 import { Loader2 } from "lucide-react"
 import { API_ENDPOINTS } from "@/lib/api"
+import { PuzzleGrid } from "./puzzle-grid"
 
 interface EditSolutionDialogProps {
   solution: Solution
@@ -117,11 +118,8 @@ export function EditSolutionDialog({ solution, open, onOpenChange, onSave }: Edi
           <div className="space-y-2 pt-4 border-t">
             <Label>Aperçu de l'équation</Label>
             <div className="bg-muted/50 rounded-lg p-4 space-y-2">
-              <div className="font-mono text-sm">
-                {positions[0]} + 13×{positions[1]}÷{positions[2]} + {positions[3]} + 12×{positions[4]} − {positions[5]}{" "}
-                − 11 + {positions[6]}×{positions[7]}÷{positions[8]} − 10 = ?
-              </div>
-              <div className="text-xs text-muted-foreground">
+              <PuzzleGrid values={positions} className="max-w-3xl mx-auto" />
+              <div className="text-xs text-muted-foreground text-center">
                 Les chiffres seront validés par le serveur lors de l'enregistrement
               </div>
             </div>

@@ -1,25 +1,37 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Calculator, Clock, Database, Trash2, Search } from "lucide-react"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { Input } from "@/components/ui/input"
+import { Calculator, Clock, Database, Trash2, X } from "lucide-react"
 import { SolutionGrid } from "./solution-grid"
 import { PuzzleVisual } from "./puzzle-visual"
 import { EditSolutionDialog } from "./edit-solution-dialog"
+import { PuzzleGrid } from "./puzzle-grid"
 import type { Solution } from "@/lib/types"
 import { useToast } from "@/hooks/use-toast"
 import { API_ENDPOINTS } from "@/lib/api"
+import { cn } from "@/lib/utils"
 
 export function PuzzleSolver() {
+  type SortMode = "incorrect-first" | "correct-first" | "id-asc" | "id-desc"
+
   const [solutions, setSolutions] = useState<Solution[]>([])
   const [isGenerating, setIsGenerating] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [computationTime, setComputationTime] = useState<number | null>(null)
-  const [filterValue, setFilterValue] = useState<string>("")
   const [selectedSolution, setSelectedSolution] = useState<Solution | null>(null)
+  const [sortMode, setSortMode] = useState<SortMode>("incorrect-first")
+  const [positionFilters, setPositionFilters] = useState<Array<number | null>>(Array(9).fill(null))
   const { toast } = useToast()
 
   // Load solutions on mount
@@ -27,13 +39,10 @@ export function PuzzleSolver() {
     loadSolutions()
   }, [])
 
-  const loadSolutions = async (filter?: string) => {
+  const loadSolutions = async () => {
     setIsLoading(true)
     try {
-      const url = filter
-        ? `${API_ENDPOINTS.solutions}?filter=${encodeURIComponent(filter)}`
-        : API_ENDPOINTS.solutions
-      const response = await fetch(url)
+      const response = await fetch(API_ENDPOINTS.solutions)
       const data = await response.json()
 
       if (!response.ok) {
@@ -165,8 +174,59 @@ export function PuzzleSolver() {
   }
 
   const handleSearch = () => {
-    loadSolutions(filterValue)
+    loadSolutions()
   }
+
+  const handlePositionFilterChange = (index: number, value: string) => {
+    setPositionFilters((prev) => {
+      const next = [...prev]
+      const num = Number(value)
+      if (!value) {
+        next[index] = null
+      } else if (Number.isInteger(num) && num >= 1 && num <= 9) {
+        next[index] = num
+      }
+      return next
+    })
+  }
+
+  const clearPositionFilter = (index: number) => {
+    setPositionFilters((prev) => {
+      const next = [...prev]
+      next[index] = null
+      return next
+    })
+  }
+
+  const clearPositionFilters = () => setPositionFilters(Array(9).fill(null))
+
+  const filteredSolutions = useMemo(() => {
+    return solutions.filter((solution) =>
+      positionFilters.every((value, idx) => value === null || solution.solution[idx] === value)
+    )
+  }, [solutions, positionFilters])
+
+  const sortedSolutions = useMemo(() => {
+    const arr = [...filteredSolutions]
+
+    return arr.sort((a, b) => {
+      switch (sortMode) {
+        case "incorrect-first": {
+          if (a.status !== b.status) return a.status === "incorrect" ? -1 : 1
+          return a.id - b.id
+        }
+        case "correct-first": {
+          if (a.status !== b.status) return a.status === "correct" ? -1 : 1
+          return a.id - b.id
+        }
+        case "id-desc":
+          return b.id - a.id
+        case "id-asc":
+        default:
+          return a.id - b.id
+      }
+    })
+  }, [filteredSolutions, sortMode])
 
   return (
     <div className="container mx-auto py-8 px-4 md:py-12 space-y-8">
@@ -228,38 +288,70 @@ export function PuzzleSolver() {
 
           {solutions.length > 0 && (
             <div className="pt-4 border-t space-y-4">
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Rechercher dans les solutions (ex: 9 + 13)"
-                  value={filterValue}
-                  onChange={(e) => setFilterValue(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                  className="flex-1"
-                />
-                <Button onClick={handleSearch} disabled={isLoading}>
-                  <Search className="size-4 mr-2" />
-                  Filtrer
-                </Button>
-              </div>
+              <div className="flex-1">
+                <div className="text-sm font-semibold mb-2">Filtrer par position</div>
+                <div className="bg-muted/50 rounded-lg p-4 border border-border/50 space-y-4">
+                  <div className="grid gap-4 lg:grid-cols-[1fr,auto] items-start">
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-3 gap-3">
+                        {positionFilters.map((value, index) => (
+                          <div key={index} className="space-y-1">
+                            <div className="flex items-center justify-between text-xs text-muted-foreground">
+                              <span>Position {index + 1}</span>
+                              {value !== null && (
+                                <Button
+                                  type="button"
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-6 w-6"
+                                  onClick={() => clearPositionFilter(index)}
+                                >
+                                  <X className="h-3.5 w-3.5" />
+                                </Button>
+                              )}
+                            </div>
+                            <Input
+                              type="number"
+                              inputMode="numeric"
+                              pattern="[1-9]*"
+                              min={1}
+                              max={9}
+                              value={value ?? ""}
+                              onChange={(e) => handlePositionFilterChange(index, e.target.value)}
+                              className="text-center font-semibold"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
 
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-medium">
-                  {solutions.length} solution{solutions.length > 1 ? "s" : ""} enregistrée
-                  {solutions.length > 1 ? "s" : ""}
-                  {filterValue && ` (filtré sur "${filterValue}")`}
-                </p>
-                {filterValue && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      setFilterValue("")
-                      loadSolutions()
-                    }}
-                  >
-                    Réinitialiser
-                  </Button>
-                )}
+                    <div className="max-w-[420px] w-full mx-auto">
+                      <PuzzleGrid
+                        values={positionFilters.map((v) => v ?? "?")}
+                        renderSlot={({ index, value, style }) => (
+                          <div
+                            key={index}
+                            className="absolute -translate-x-1/2 -translate-y-1/2 flex items-center justify-center"
+                            style={style}
+                          >
+                            <div className="relative flex items-center justify-center text-2xl font-semibold text-primary">
+                              <span className="absolute -left-3 -top-3 rounded-full bg-primary text-primary-foreground text-[10px] px-1.5 py-0.5">
+                                {index + 1}
+                              </span>
+                              {value}
+                            </div>
+                          </div>
+                        )}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap items-center justify-center gap-2">
+                    <Button variant="outline" size="sm" onClick={clearPositionFilters} disabled={isLoading}>
+                      Réinitialiser les filtres
+                    </Button>
+                  </div>
+                </div>
               </div>
             </div>
           )}
@@ -267,7 +359,32 @@ export function PuzzleSolver() {
       </Card>
 
       {solutions.length > 0 && (
-        <SolutionGrid solutions={solutions} onEdit={setSelectedSolution} onDelete={handleDelete} />
+        <div className="space-y-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <span className="text-sm text-muted-foreground">Tri</span>
+              <Select value={sortMode} onValueChange={(value) => setSortMode(value as SortMode)}>
+                <SelectTrigger className="w-[220px]">
+                  <SelectValue placeholder="Choisir un tri" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="incorrect-first">Fausse d'abord</SelectItem>
+                  <SelectItem value="correct-first">Correcte d'abord</SelectItem>
+                  <SelectItem value="id-asc">Numéro croissant</SelectItem>
+                  <SelectItem value="id-desc">Numéro décroissant</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <p className="text-sm font-medium text-muted-foreground">
+              {sortedSolutions.length} solution{sortedSolutions.length > 1 ? "s" : ""} affichée
+              {sortedSolutions.length > 1 ? "s" : ""}
+              {positionFilters.some((v) => v !== null) && " (filtre par position appliqué)"}
+            </p>
+          </div>
+
+          <SolutionGrid solutions={sortedSolutions} onEdit={setSelectedSolution} onDelete={handleDelete} />
+        </div>
       )}
 
       {selectedSolution && (

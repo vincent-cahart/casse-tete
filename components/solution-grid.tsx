@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { AlertTriangle, Edit, Trash2 } from "lucide-react"
+import { PuzzleGrid } from "./puzzle-grid"
 import type { Solution } from "@/lib/types"
 
 interface SolutionGridProps {
@@ -13,12 +14,6 @@ interface SolutionGridProps {
 }
 
 export function SolutionGrid({ solutions, onEdit, onDelete }: SolutionGridProps) {
-  const renderSlot = (value: number) => (
-    <span className="inline-flex items-center justify-center size-8 rounded bg-primary/10 text-primary font-semibold border border-primary/30">
-      {value}
-    </span>
-  )
-
   return (
     <div className="max-w-7xl mx-auto">
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -47,37 +42,7 @@ export function SolutionGrid({ solutions, onEdit, onDelete }: SolutionGridProps)
                   <div className="text-center text-xs uppercase tracking-wide text-muted-foreground">Disposition</div>
 
                   {solution.solution.length === 9 && (
-                    <div className="space-y-1 font-mono text-sm text-center leading-relaxed">
-                      <div className="flex items-center justify-center gap-2 flex-wrap">
-                        {renderSlot(solution.solution[0])}
-                        <span>+</span>
-                        <span>13×</span>
-                        {renderSlot(solution.solution[1])}
-                        <span>÷</span>
-                        {renderSlot(solution.solution[2])}
-                        <span>+</span>
-                      </div>
-                      <div className="flex items-center justify-center gap-2 flex-wrap">
-                        {renderSlot(solution.solution[3])}
-                        <span>+</span>
-                        <span>12×</span>
-                        {renderSlot(solution.solution[4])}
-                        <span>−</span>
-                        {renderSlot(solution.solution[5])}
-                        <span>−</span>
-                      </div>
-                      <div className="flex items-center justify-center gap-2 flex-wrap">
-                        <span>11 +</span>
-                        {renderSlot(solution.solution[6])}
-                        <span>×</span>
-                        {renderSlot(solution.solution[7])}
-                        <span>÷</span>
-                        {renderSlot(solution.solution[8])}
-                        <span>−</span>
-                        <span>10</span>
-                      </div>
-                      <div className="text-base font-bold text-primary pt-2">= 66</div>
-                    </div>
+                    <PuzzleGrid values={solution.solution} className="max-w-[560px] mx-auto" />
                   )}
 
                   <div
