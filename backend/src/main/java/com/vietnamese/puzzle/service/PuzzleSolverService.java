@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.IntStream;
 
 @Service
 public class PuzzleSolverService {
@@ -14,9 +13,53 @@ public class PuzzleSolverService {
     private static final double TARGET = 66.0;
     private static final double TOLERANCE = 1e-6;
 
-    public record PuzzleValidation(boolean isValid, String equation, double result) {}
+    public static class PuzzleValidation {
+        private final boolean isValid;
+        private final String equation;
+        private final double result;
 
-    public record SolutionCandidate(List<Integer> positions, String equation, double result) {}
+        public PuzzleValidation(boolean isValid, String equation, double result) {
+            this.isValid = isValid;
+            this.equation = equation;
+            this.result = result;
+        }
+
+        public boolean isValid() {
+            return isValid;
+        }
+
+        public String equation() {
+            return equation;
+        }
+
+        public double result() {
+            return result;
+        }
+    }
+
+    public static class SolutionCandidate {
+        private final List<Integer> positions;
+        private final String equation;
+        private final double result;
+
+        public SolutionCandidate(List<Integer> positions, String equation, double result) {
+            this.positions = positions;
+            this.equation = equation;
+            this.result = result;
+        }
+
+        public List<Integer> positions() {
+            return positions;
+        }
+
+        public String equation() {
+            return equation;
+        }
+
+        public double result() {
+            return result;
+        }
+    }
 
     public PuzzleValidation validate(List<Integer> positions) {
         if (positions == null || positions.size() != 9) {
@@ -46,7 +89,10 @@ public class PuzzleSolverService {
 
     private void backtrack(int depth, boolean[] used, int[] current, List<SolutionCandidate> solutions) {
         if (depth == 9) {
-            List<Integer> positions = IntStream.of(current).boxed().toList();
+            List<Integer> positions = new ArrayList<>(9);
+            for (int value : current) {
+                positions.add(value);
+            }
             PuzzleValidation validation = validate(positions);
 
             if (validation.isValid()) {

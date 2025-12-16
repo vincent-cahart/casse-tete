@@ -2,7 +2,6 @@
 
 import Image from "next/image"
 import type { CSSProperties, ReactNode } from "react"
-import { cn } from "@/lib/utils"
 
 export type GridValue = number | string
 
@@ -21,14 +20,14 @@ export const PUZZLE_SLOTS = [
 interface PuzzleGridProps {
   values: GridValue[]
   className?: string
-  renderSlot?: (args: { index: number; value: GridValue; style: CSSProperties; className: string }) => ReactNode
+  renderSlot?: (args: { index: number; value: GridValue; style: CSSProperties }) => ReactNode
 }
 
-export function PuzzleGrid({ values, className, renderSlot }: PuzzleGridProps) {
+export function PuzzleGrid({ values, className = "", renderSlot }: PuzzleGridProps) {
   const displayValues = Array.from({ length: 9 }, (_, index) => values?.[index] ?? "?")
 
   return (
-    <div className={cn("relative w-full", className)} style={{ aspectRatio: "720 / 520" }}>
+    <div className={`relative w-full ${className}`} style={{ aspectRatio: "720 / 520" }}>
       <Image
         src="/grille.svg"
         alt="Grille du puzzle"
@@ -40,22 +39,24 @@ export function PuzzleGrid({ values, className, renderSlot }: PuzzleGridProps) {
 
       {PUZZLE_SLOTS.map((slot, index) => {
         const style: CSSProperties = { left: slot.left, top: slot.top }
-        const containerClass = "absolute -translate-x-1/2 -translate-y-1/2 flex items-center justify-center"
-        const defaultClass = cn(
-          containerClass,
-          "rounded-full bg-primary/10 text-primary font-semibold border border-primary/30 text-lg size-12 md:size-14"
-        )
-
         if (renderSlot) {
           return (
-            <div key={index} className={containerClass} style={style}>
-              {renderSlot({ index, value: displayValues[index], style, className: containerClass })}
+            <div
+              key={index}
+              className="absolute -translate-x-1/2 -translate-y-1/2 flex items-center justify-center"
+              style={style}
+            >
+              {renderSlot({ index, value: displayValues[index], style })}
             </div>
           )
         }
 
         return (
-          <div key={index} className={defaultClass} style={style}>
+          <div
+            key={index}
+            className="absolute -translate-x-1/2 -translate-y-1/2 flex items-center justify-center rounded-full bg-primary/10 text-primary font-semibold border border-primary/30 text-lg size-12 md:size-14"
+            style={style}
+          >
             {displayValues[index]}
           </div>
         )

@@ -4,8 +4,6 @@ CREATE TABLE IF NOT EXISTS puzzle_solutions (
   solution JSONB NOT NULL,
   equation TEXT NOT NULL,
   result INTEGER NOT NULL,
+  status TEXT NOT NULL DEFAULT 'correct' CHECK (status IN ('correct', 'incorrect')),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
-
--- Create index for faster queries
-CREATE INDEX IF NOT EXISTS idx_puzzle_result ON puzzle_solutions(result);

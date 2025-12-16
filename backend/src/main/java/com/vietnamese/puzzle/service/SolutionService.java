@@ -13,7 +13,23 @@ import java.util.List;
 @Service
 public class SolutionService {
 
-    public record GenerationResult(List<PuzzleSolution> solutions, long computationTimeMs) {}
+    public static class GenerationResult {
+        private final List<PuzzleSolution> solutions;
+        private final long computationTimeMs;
+
+        public GenerationResult(List<PuzzleSolution> solutions, long computationTimeMs) {
+            this.solutions = solutions;
+            this.computationTimeMs = computationTimeMs;
+        }
+
+        public List<PuzzleSolution> getSolutions() {
+            return solutions;
+        }
+
+        public long getComputationTimeMs() {
+            return computationTimeMs;
+        }
+    }
 
     private final PuzzleSolutionRepository repository;
     private final PuzzleSolverService solverService;

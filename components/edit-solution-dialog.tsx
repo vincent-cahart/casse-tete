@@ -1,21 +1,13 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
+import type { Solution } from "@/lib/types"
+import { Loader2, X } from "lucide-react"
+import { API_ENDPOINTS } from "@/lib/api"
+import { PuzzleGrid } from "./puzzle-grid"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import type { Solution } from "@/lib/types"
-import { Loader2 } from "lucide-react"
-import { API_ENDPOINTS } from "@/lib/api"
-import { PuzzleGrid } from "./puzzle-grid"
 
 interface EditSolutionDialogProps {
   solution: Solution
@@ -77,22 +69,37 @@ export function EditSolutionDialog({ solution, open, onOpenChange, onSave }: Edi
   const canSave = !hasDuplicates && hasAllDigits && !isValidating
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>Modifier la Solution #{solution.id}</DialogTitle>
-          <DialogDescription>
-            Modifiez les positions des chiffres. Le serveur validera automatiquement si la solution est correcte.
-          </DialogDescription>
-        </DialogHeader>
+    open && (
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+        onClick={() => onOpenChange(false)}
+        role="presentation"
+      >
+        <div
+          className="w-full max-w-2xl rounded-lg bg-white shadow-lg p-6 space-y-6"
+          onClick={(e) => e.stopPropagation()}
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="flex items-start justify-between">
+            <div>
+              <h2 className="text-lg font-semibold">Modifier la Solution #{solution.id}</h2>
+              <p className="text-sm text-gray-600">Modifiez les positions puis enregistrez.</p>
+            </div>
+            <button
+              className="rounded border px-2 py-1 text-sm hover:bg-gray-100"
+              onClick={() => onOpenChange(false)}
+              aria-label="Fermer"
+            >
+              <X className="size-4" />
+            </button>
+          </div>
 
-        <div className="space-y-6 py-4">
           <div className="space-y-3">
-            <Label>Positions des chiffres (1 à 9)</Label>
             <div className="grid grid-cols-3 gap-3">
               {positions.map((pos, index) => (
                 <div key={index} className="space-y-1">
-                  <Label htmlFor={`pos-${index}`} className="text-xs text-muted-foreground">
+                  <Label htmlFor={`pos-${index}`} className="text-xs text-gray-600">
                     Position {index + 1}
                   </Label>
                   <Input
@@ -102,44 +109,38 @@ export function EditSolutionDialog({ solution, open, onOpenChange, onSave }: Edi
                     max="9"
                     value={pos}
                     onChange={(e) => handlePositionChange(index, e.target.value)}
-                    className="font-mono text-center text-lg"
+                    className="w-full text-center font-mono text-lg"
                   />
                 </div>
               ))}
             </div>
             <div className="min-h-[32px] space-y-1 text-xs">
-              {hasDuplicates && (
-                <p className="text-destructive">⚠ Chaque chiffre de 1 à 9 doit être utilisé une seule fois</p>
-              )}
-              {!hasAllDigits && <p className="text-destructive">⚠ Les valeurs doivent être entre 1 et 9</p>}
+              {hasDuplicates && <p className="text-red-600">⚠ Chaque chiffre de 1 à 9 doit être utilisé une seule fois</p>}
+              {!hasAllDigits && <p className="text-red-600">⚠ Les valeurs doivent être entre 1 et 9</p>}
             </div>
           </div>
 
           <div className="space-y-2 pt-4 border-t">
-            <Label>Aperçu de l'équation</Label>
-            <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+            <Label className="text-sm font-medium">Aperçu</Label>
+            <div className="rounded-lg border bg-gray-50 p-4 space-y-2">
               <PuzzleGrid values={positions} className="max-w-3xl mx-auto" />
-              <div className="text-xs text-muted-foreground text-center">
-                Les chiffres seront validés par le serveur lors de l'enregistrement
-              </div>
+              <div className="text-xs text-gray-500 text-center">La validation est faite côté serveur à l'enregistrement.</div>
             </div>
           </div>
 
-          {validationMessage && (
-            <div className="bg-destructive/10 text-destructive text-sm rounded-lg p-3">{validationMessage}</div>
-          )}
-        </div>
+          {validationMessage && <div className="rounded-lg bg-red-50 text-red-700 text-sm p-3">{validationMessage}</div>}
 
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isValidating}>
-            Annuler
-          </Button>
-          <Button onClick={handleSave} disabled={!canSave}>
-            {isValidating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {isValidating ? "Validation en cours..." : "Enregistrer"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          <div className="flex justify-end gap-2 pt-2 border-t">
+            <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isValidating}>
+              Annuler
+            </Button>
+            <Button onClick={handleSave} disabled={!canSave}>
+              {isValidating && <Loader2 className="h-4 w-4 animate-spin" />}
+              {isValidating ? "Validation en cours..." : "Enregistrer"}
+            </Button>
+          </div>
+        </div>
+      </div>
+    )
   )
 }

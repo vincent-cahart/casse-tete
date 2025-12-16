@@ -2,6 +2,7 @@ package com.vietnamese.puzzle.controller;
 
 import com.vietnamese.puzzle.dto.SolutionDto;
 import com.vietnamese.puzzle.dto.UpdateSolutionRequest;
+import com.vietnamese.puzzle.dto.ValidationRequest;
 import com.vietnamese.puzzle.model.PuzzleSolution;
 import com.vietnamese.puzzle.service.PuzzleSolverService;
 import com.vietnamese.puzzle.service.SolutionService;
@@ -22,7 +23,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/solutions")
+@RequestMapping("/api")
 @CrossOrigin(origins = {"http://localhost:3000", "http://localhost:5173", "http://localhost:4200"})
 public class SolutionController {
 
@@ -32,61 +33,80 @@ public class SolutionController {
         this.solutionService = solutionService;
     }
 
-    @GetMapping
+    @GetMapping("/solutions")
     public Map<String, Object> listSolutions(@RequestParam(value = "filter", required = false) String filter) {
         List<SolutionDto> solutions = solutionService.getSolutions(filter).stream()
                 .map(SolutionDto::fromEntity)
                 .toList();
 
-        return Map.of("solutions", solutions);
+        Map<String, Object> response = new HashMap<>();
+        response.put("solutions", solutions);
+        return response;
     }
 
-    @PostMapping
+    @PostMapping("/solutions")
     public Map<String, Object> generateSolutions() {
         SolutionService.GenerationResult result = solutionService.generateAndSaveAll();
 
-        List<SolutionDto> solutions = result.solutions().stream()
+        List<SolutionDto> solutions = result.getSolutions().stream()
                 .map(SolutionDto::fromEntity)
                 .toList();
 
         Map<String, Object> response = new HashMap<>();
         response.put("solutions", solutions);
         response.put("count", solutions.size());
-        response.put("computationTime", result.computationTimeMs());
+        response.put("computationTime", result.getComputationTimeMs());
         return response;
     }
 
-    @DeleteMapping
+    @DeleteMapping("/solutions")
     public Map<String, String> deleteAll() {
         solutionService.deleteAll();
-        return Map.of("message", "Toutes les solutions ont été supprimées");
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "Toutes les solutions ont été supprimées");
+        return response;
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/solutions/{id}")
     public Map<String, Object> getSolution(@PathVariable Long id) {
         PuzzleSolution solution = solutionService.getSolution(id);
-        return Map.of("solution", SolutionDto.fromEntity(solution));
+        Map<String, Object> response = new HashMap<>();
+        response.put("solution", SolutionDto.fromEntity(solution));
+        return response;
     }
 
-    @PutMapping("/{id}")
+    @PutMapping("/solutions/{id}")
     public Map<String, Object> updateSolution(@PathVariable Long id, @Valid @RequestBody UpdateSolutionRequest request) {
         PuzzleSolverService.PuzzleValidation validation = solutionService.validate(request.solution());
         PuzzleSolution updated = solutionService.updateSolution(id, request.solution());
 
-        Map<String, Object> validationPayload = Map.of(
-                "isValid", validation.isValid(),
-                "result", validation.result()
-        );
+        Map<String, Object> validationPayload = new HashMap<>();
+        validationPayload.put("isValid", validation.isValid());
+        validationPayload.put("result", validation.result());
 
-        return Map.of(
-                "solution", SolutionDto.fromEntity(updated),
-                "validation", validationPayload
-        );
+        Map<String, Object> response = new HashMap<>();
+        response.put("solution", SolutionDto.fromEntity(updated));
+        response.put("validation", validationPayload);
+        return response;
     }
 
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/solutions/{id}")
     public Map<String, String> deleteSolution(@PathVariable Long id) {
         solutionService.deleteById(id);
-        return Map.of("message", "Solution supprimée");
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "Solution supprimée");
+        return response;
+    }
+
+    @PostMapping("/validate")
+    @CrossOrigin(origins = {"http://localhost:3000", "http://localhost:5173", "http://localhost:4200"})
+    public Map<String, Object> validatePuzzle(@Valid @RequestBody ValidationRequest request) {
+        PuzzleSolverService.PuzzleValidation validation = solutionService.validate(request.positions());
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("isValid", validation.isValid());
+        response.put("equation", validation.equation());
+        response.put("result", validation.result());
+        return response;
     }
 }
